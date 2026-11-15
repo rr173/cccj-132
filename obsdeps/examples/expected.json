@@ -1,0 +1,89 @@
+{
+  "_comment": [
+    "Hand-written expectations for examples/build_bundle.py, derived by reading",
+    "the bundle contents, not by running the resolver.",
+    "",
+    "Subject com.acme:shop:1.0 declares parent com.acme:shop-parent:1.0 in both",
+    "the observation named obs-child-only and the observations named obs-later",
+    "and obs-alt-parent (do not confuse with observed_at timestamps).",
+    "",
+    "Context A searches R1 and finds only the child observation.  The parent POM",
+    "is absent, so nothing may be called resolved: status blocked, no derived",
+    "dependencies, and a pom-missing entry naming the parent edge.",
+    "",
+    "Context B adds the R1 observation obs-later.  Parent is R1/shop-parent.",
+    "Parent declares release=1.0 and telemetry-version=4.1.  The child overrides",
+    "release=2.0 and manages pricing with ${release}; telemetry is managed by the",
+    "parent with ${telemetry-version}.  audit is an explicit 3.0 direct dependency",
+    "and is never managed.  Therefore: pricing=2.0, telemetry=4.1, audit=3.0.",
+    "",
+    "Context C puts R0 before R1, and R0 also contains shop-parent:1.0 but with",
+    "telemetry-version=5.5.  The child's own override still wins for pricing, so",
+    "pricing stays 2.0.  audit is direct, so 3.0.  telemetry is managed by",
+    "${telemetry-version}, which is not overridden by the child, so the R0 parent",
+    "changes it to 5.5.  Only telemetry changes version; pricing's provenance",
+    "changes in supporting history (the overridden R0 entry) but its derivation",
+    "does not.",
+    "",
+    "SNAPSHOT observation: metadata lists pom -> ...303030-3, jar -> ...101010-1,",
+    "jar(tests) -> ...202020-2.  The main jar and the tests jar are different",
+    "values; both dependencies use the same POM mapping, which is the ...303030-3",
+    "file.  No file name is derived from the timestamp or build number."
+  ],
+  "A": {
+    "status": "blocked",
+    "versions": {},
+    "missing_codes": ["pom-missing"]
+  },
+  "B": {
+    "status": "resolved",
+    "versions": {
+      "com.acme:pricing:jar:": "2.0",
+      "com.acme:audit:jar:": "3.0",
+      "com.acme:telemetry:jar:": "4.1"
+    },
+    "missing_codes": []
+  },
+  "C": {
+    "status": "resolved",
+    "versions": {
+      "com.acme:pricing:jar:": "2.0",
+      "com.acme:audit:jar:": "3.0",
+      "com.acme:telemetry:jar:": "5.5"
+    },
+    "missing_codes": [],
+    "parent_repo": "R0"
+  },
+  "B_vs_C": {
+    "version_changed": ["com.acme:telemetry:jar:"],
+    "source_changed": []
+  },
+  "snapshot": {
+    "files": {
+      "com.acme:stream:jar:": {
+        "dependency-pom": {
+          "path": "com/acme/stream/2.0-SNAPSHOT/stream-2.0-20240403.303030-3.pom",
+          "observed": true,
+          "snapshot_value": "2.0-20240403.303030-3"
+        },
+        "dependency-artifact": {
+          "path": "com/acme/stream/2.0-SNAPSHOT/stream-2.0-20240401.101010-1.jar",
+          "observed": true,
+          "snapshot_value": "2.0-20240401.101010-1"
+        }
+      },
+      "com.acme:stream:jar:tests": {
+        "dependency-pom": {
+          "path": "com/acme/stream/2.0-SNAPSHOT/stream-2.0-20240403.303030-3.pom",
+          "observed": true,
+          "snapshot_value": "2.0-20240403.303030-3"
+        },
+        "dependency-artifact": {
+          "path": "com/acme/stream/2.0-SNAPSHOT/stream-2.0-20240402.202020-2-tests.jar",
+          "observed": true,
+          "snapshot_value": "2.0-20240402.202020-2"
+        }
+      }
+    }
+  }
+}
