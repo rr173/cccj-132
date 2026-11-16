@@ -8,6 +8,12 @@ without reaching for anything newer.
 
 Pure Python 3.9+, standard library only. No network, no Maven, no builds.
 
+It also ships an **offline time-of-use electricity settlement** feature
+(`obsdeps billing`) that splits cumulative meter readings across local tariff
+periods, handles DST fall-backs/spring-forwards and counter roll-overs, and
+emits fully evidenced, hand-recomputable bills. See
+[docs/BILLING.md](docs/BILLING.md).
+
 ## Quick start
 
 ```bash
@@ -38,6 +44,37 @@ with Api("mirror.sqlite3") as api:
     )
     print(result["status"], result["dependencies"])
 ```
+
+### Offline electricity settlement
+
+```bash
+# Four local JSON files: meters, readings, tariffs, periods. Nothing is written.
+python3 tools/obsdeps_cli.py billing settle \
+    --meters meters.json --readings readings.json \
+    --tariffs tariffs.json --periods periods.json
+
+# Or keep an immutable SQLite record and settle from the stored bytes.
+python3 tools/obsdeps_cli.py billing register --db billing.sqlite3 \
+    --meters meters.json --readings readings.json \
+    --tariffs tariffs.json --periods periods.json
+python3 tools/obsdeps_cli.py billing registered --db billing.sqlite3
+
+# Hand-worked, independently verified example.
+python3 examples/run_billing_example.py
+```
+
+```python
+from obsdeps.billing import BillingApi
+
+with BillingApi() as api:
+    result = api.settle_files(
+        meters="meters.json", readings="readings.json",
+        tariffs="tariffs.json", periods="periods.json")
+print(result["summary"], result["bills"], result["rejected"])
+```
+
+Time, roll-over and precision rules, the input formats and every rejection
+code: [docs/BILLING.md](docs/BILLING.md).
 
 ## What it does and does not do
 

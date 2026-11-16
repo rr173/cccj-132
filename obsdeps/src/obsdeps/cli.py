@@ -17,6 +17,7 @@ import sys
 from typing import Any, Dict, List, Optional, Sequence
 
 from .api import Api
+from .billing.cli import add_billing_parser, run_billing
 from .errors import Problem, Problematic, UsageError
 from .manifest import ManifestError
 
@@ -140,6 +141,8 @@ def build_parser() -> argparse.ArgumentParser:
     files = sub.add_parser("files", help="list the file digest manifest of one observation")
     files.add_argument("--db", required=True)
     files.add_argument("--observation", required=True, type=_observation_argument)
+
+    add_billing_parser(sub)
     return parser
 
 
@@ -151,6 +154,9 @@ def _emit(payload: Any) -> None:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if args.command == "billing":
+        return run_billing(args)
 
     try:
         if args.command == "observations":
