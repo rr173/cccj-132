@@ -14,6 +14,14 @@ periods, handles DST fall-backs/spring-forwards and counter roll-overs, and
 emits fully evidenced, hand-recomputable bills. See
 [docs/BILLING.md](docs/BILLING.md).
 
+It also ships a **repeatable charging-station directory collector**
+(`obsdeps stations`) that pages cursor-based station feeds from several
+charging networks through two provider-specific JSON adapters, keeps only the
+newest observations as the current state (same-timestamp contradictions become
+explicit `CONFLICT`s), merges networks only via explicit canonical ids, and
+records every page, cursor, original row locator and failure in SQLite. See
+[docs/STATIONS.md](docs/STATIONS.md).
+
 ## Quick start
 
 ```bash
@@ -75,6 +83,38 @@ print(result["summary"], result["bills"], result["rejected"])
 
 Time, roll-over and precision rules, the input formats and every rejection
 code: [docs/BILLING.md](docs/BILLING.md).
+
+### Charging-station directory collection
+
+```bash
+# Collect one or more cursor-paged provider feeds into an evidenced SQLite view.
+# --mock-fixture swaps HTTP for a fully local, deterministic interface.
+python3 tools/obsdeps_cli.py stations collect --db stations.sqlite3 \
+    --sources sources.json --mock-fixture mock.json
+python3 tools/obsdeps_cli.py stations list --db stations.sqlite3
+python3 tools/obsdeps_cli.py stations show --db stations.sqlite3 \
+    --provider ALPHA --station A1
+python3 tools/obsdeps_cli.py stations canonical --db stations.sqlite3 \
+    --canonical-id CAN-RIVERSIDE
+python3 tools/obsdeps_cli.py stations problems --db stations.sqlite3
+
+# Hand-checked scenario: independent cursors, newer-wins state, conflicts,
+# canonical merging, row-level rejection and a cursor-cycling source.
+python3 examples/build_stations_fixture.py examples/stations_mock.json
+python3 examples/run_stations_example.py
+```
+
+```python
+from obsdeps.stations import StationApi, MockTransport
+
+with StationApi("stations.sqlite3") as api:
+    summary = api.collect(sources, transport=MockTransport.from_file("mock.json"))
+    station = api.get_station("ALPHA", "A1")     # current state + evidence
+    group = api.get_canonical_group("CAN-RIVERSIDE")
+```
+
+Identity rules, pagination failure scope, conflict handling and rerun
+semantics: [docs/STATIONS.md](docs/STATIONS.md).
 
 ## What it does and does not do
 

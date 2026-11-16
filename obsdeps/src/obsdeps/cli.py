@@ -20,6 +20,7 @@ from .api import Api
 from .billing.cli import add_billing_parser, run_billing
 from .errors import Problem, Problematic, UsageError
 from .manifest import ManifestError
+from .stations.cli import add_stations_parser, run_stations
 
 
 def _chain_argument(value: str) -> List[Dict[str, str]]:
@@ -143,6 +144,7 @@ def build_parser() -> argparse.ArgumentParser:
     files.add_argument("--observation", required=True, type=_observation_argument)
 
     add_billing_parser(sub)
+    add_stations_parser(sub)
     return parser
 
 
@@ -157,6 +159,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if args.command == "billing":
         return run_billing(args)
+
+    if args.command == "stations":
+        return run_stations(args)
 
     try:
         if args.command == "observations":
