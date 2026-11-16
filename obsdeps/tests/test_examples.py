@@ -11,6 +11,8 @@ from support import SRC
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNNER = os.path.join(ROOT, "examples", "run_worked_example.py")
+PROXYVOTE_RUNNER = os.path.join(ROOT, "examples",
+                                "run_proxyvote_example.py")
 
 
 class WorkedExample(unittest.TestCase):
@@ -31,6 +33,19 @@ class WorkedExample(unittest.TestCase):
         self.assertIn("do not confuse with observed_at timestamps", text)
         self.assertNotIn("context_sha256", text)
         self.assertNotIn("sha256:", text)
+
+
+
+class ProxyVoteExample(unittest.TestCase):
+    def test_proxyvote_example_matches_hand_written_expectations(self):
+        completed = subprocess.run(
+            [sys.executable, "-I", PROXYVOTE_RUNNER],
+            capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(completed.returncode, 0,
+                         completed.stdout + completed.stderr)
+        self.assertIn("matches hand-written expectations", completed.stdout)
+        self.assertIn("Scenario B: X = 85 contested = 15", completed.stdout)
+        self.assertIn("Scenario D: revoked G1", completed.stdout)
 
 
 if __name__ == "__main__":

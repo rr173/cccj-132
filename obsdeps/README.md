@@ -14,6 +14,13 @@ periods, handles DST fall-backs/spring-forwards and counter roll-overs, and
 emits fully evidenced, hand-recomputable bills. See
 [docs/BILLING.md](docs/BILLING.md).
 
+It also ships an **offline proxy-vote reconciliation** feature
+(`obsdeps proxyvote`) that resolves record-date holdings, chained proxy
+authorizations and ballots into per-proposal totals with a segment-by-segment
+evidence trail. Half-open share ranges, cutoff-time authority, local
+contested spans and immutable SQLite reruns are documented in
+[docs/PROXYVOTE.md](docs/PROXYVOTE.md).
+
 It also ships a **repeatable charging-station directory collector**
 (`obsdeps stations`) that pages cursor-based station feeds from several
 charging networks through two provider-specific JSON adapters, keeps only the
@@ -83,6 +90,40 @@ print(result["summary"], result["bills"], result["rejected"])
 
 Time, roll-over and precision rules, the input formats and every rejection
 code: [docs/BILLING.md](docs/BILLING.md).
+
+### Offline proxy-vote reconciliation
+
+```bash
+# Four local JSONL files for one requested meeting version. Nothing is written.
+python3 tools/obsdeps_cli.py proxyvote reconcile \
+    --meeting-id M --record-date 2026-03-01 --cutoff-at 2026-03-05T00:00:00Z \
+    --roster roster.jsonl --proposals proposals.jsonl \
+    --grants grants.jsonl --ballots ballots.jsonl
+
+# Store immutably, then query the stored result from a fresh process.
+python3 tools/obsdeps_cli.py proxyvote store --db proxyvote.sqlite3 \
+    --meeting-id M --record-date 2026-03-01 --cutoff-at 2026-03-05T00:00:00Z \
+    --roster roster.jsonl --proposals proposals.jsonl \
+    --grants grants.jsonl --ballots ballots.jsonl
+python3 tools/obsdeps_cli.py proxyvote summary  --db proxyvote.sqlite3 --meeting-id M
+python3 tools/obsdeps_cli.py proxyvote evidence --db proxyvote.sqlite3 \
+    --reconciliation-id pv-... --proposal-id Q
+```
+
+```python
+from obsdeps.proxyvote import ProxyVoteApi
+
+with ProxyVoteApi("proxyvote.sqlite3") as api:
+    api.register(meeting_id="M", record_date="2026-03-01",
+                 cutoff_at="2026-03-05T00:00:00Z",
+                 roster="roster.jsonl", proposals="proposals.jsonl",
+                 grants="grants.jsonl", ballots="ballots.jsonl")
+    totals = api.summary(meeting_id="M")
+```
+
+Hand-worked chain, conflict isolation, revocation and the scale argument:
+[docs/PROXYVOTE.md](docs/PROXYVOTE.md). Example:
+`python3 examples/run_proxyvote_example.py`.
 
 ### Charging-station directory collection
 

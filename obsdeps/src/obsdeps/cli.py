@@ -20,6 +20,7 @@ from .api import Api
 from .billing.cli import add_billing_parser, run_billing
 from .errors import Problem, Problematic, UsageError
 from .manifest import ManifestError
+from .proxyvote.cli import add_proxyvote_parser, run_proxyvote
 from .stations.cli import add_stations_parser, run_stations
 
 
@@ -145,6 +146,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     add_billing_parser(sub)
     add_stations_parser(sub)
+    add_proxyvote_parser(sub)
     return parser
 
 
@@ -162,6 +164,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if args.command == "stations":
         return run_stations(args)
+
+    if args.command == "proxyvote":
+        return run_proxyvote(args)
 
     try:
         if args.command == "observations":
